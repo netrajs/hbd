@@ -143,7 +143,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  let isLeaving = false;
+
   function goToLetter() {
+    // Only navigate once; repeated calls kept restarting the navigation on phones
+    if (isLeaving) return;
+    isLeaving = true;
     if (animationId) cancelAnimationFrame(animationId);
     if (typeof navigateWithTransition === "function") {
       navigateWithTransition("letter.html");
@@ -170,7 +175,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    animationId = requestAnimationFrame(updateProgress);
+    if (!isLeaving) animationId = requestAnimationFrame(updateProgress);
   }
 
   // Start story loop

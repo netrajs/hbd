@@ -199,7 +199,13 @@ function attemptPlayMusic(forceWait = false) {
 }
 
 // Page Transition Helper
+let isNavigating = false;
+
 function navigateWithTransition(url) {
+  // Ignore repeat calls so a page change can't keep restarting itself
+  if (isNavigating) return;
+  isNavigating = true;
+
   const overlay = document.querySelector(".page-transition-overlay");
   if (overlay) {
     overlay.classList.remove("is-loaded");
@@ -280,3 +286,14 @@ function fadeVolume(start, end, duration = 2500) {
     sessionStorage.setItem("musicVolume", audioInstance.volume);
   }, interval);
 }
+
+// If the phone restores a page from its back/forward cache, clear the black exit overlay
+window.addEventListener("pageshow", (event) => {
+  if (!event.persisted) return;
+  isNavigating = false;
+  const overlay = document.querySelector(".page-transition-overlay");
+  if (overlay) {
+    overlay.classList.remove("is-exiting");
+    overlay.classList.add("is-loaded");
+  }
+});
