@@ -34,19 +34,27 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // 4. Initialize Background Music
-  initBackgroundMusic();
-
-  // 5. Spawn Ambient Particles
-  createAmbientParticles();
-
-  // 6. Trigger Page Load Animations
+  // 4. Trigger Page Load Animations first, so a music or particle error can never leave the page black
   setTimeout(() => {
     overlay.classList.add("is-loaded");
     if (mainJourney) {
       mainJourney.classList.add("is-active");
     }
   }, 100);
+
+  // 5. Initialize Background Music
+  try {
+    initBackgroundMusic();
+  } catch (error) {
+    console.log("Music setup failed:", error);
+  }
+
+  // 6. Spawn Ambient Particles
+  try {
+    createAmbientParticles();
+  } catch (error) {
+    console.log("Particles failed:", error);
+  }
 });
 
 // Particle Spawning Logic
@@ -107,20 +115,33 @@ function initBackgroundMusic() {
   const endingStart = BirthdayConfig.endingMusicStart;
   const jumpToEnding = isEndingPage && typeof endingStart === "number" && !sessionStorage.getItem("endingJumped");
 
+  // Some phones refuse to seek before the song has loaded, so wait for its metadata
+  const seekTo = (time) => {
+    const doSeek = () => {
+      try {
+        audio.currentTime = time;
+      } catch (error) {
+        console.log("Could not seek music:", error);
+      }
+    };
+    if (audio.readyState >= 1) doSeek();
+    else audio.addEventListener("loadedmetadata", doSeek, { once: true });
+  };
+
   if (jumpToEnding) {
-    audio.currentTime = endingStart;
+    seekTo(endingStart);
     sessionStorage.setItem("endingJumped", "true");
     sessionStorage.setItem("musicVolume", "0");
   } else {
     const savedTime = parseFloat(sessionStorage.getItem("musicTime") || "0");
-    if (savedTime) audio.currentTime = savedTime;
+    if (savedTime) seekTo(savedTime);
   }
 
   const savedVolume = parseFloat(sessionStorage.getItem("musicVolume") || "0");
   audio.volume = Math.min(savedVolume, MUSIC_TARGET_VOLUME);
 
   audio.addEventListener("timeupdate", () => {
-    sessionStorage.setItem("musicTime", audio.currentTime);
+    if (audio.currentTime > 0) sessionStorage.setItem("musicTime", audio.currentTime);
   });
 
   // Continue (or start) the slow fade-in once playback actually begins
@@ -212,7 +233,7 @@ function navigateWithTransition(url) {
     overlay.classList.add("is-exiting");
   }
 
-  if (audioInstance) {
+  if (audioInstance && audioInstance.currentTime > 0) {
     sessionStorage.setItem("musicTime", audioInstance.currentTime);
   }
 

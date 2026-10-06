@@ -188,6 +188,18 @@ body.is-dark .progress-indicator {
   transition: opacity 0.8s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
+/* Failsafe: lift the cover by itself if the page script ever fails to */
+.page-transition-overlay:not(.is-exiting) {
+  animation: overlay-failsafe 0.8s ease 2.5s forwards;
+}
+
+@keyframes overlay-failsafe {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
 .page-transition-overlay.is-loaded {
   opacity: 0;
   pointer-events: none;
@@ -205,6 +217,18 @@ main.journey {
   opacity: 0;
   transform: translateY(15px);
   transition: opacity 0.8s cubic-bezier(0.25, 1, 0.5, 1), transform 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* Failsafe: show the chapter by itself if the page script ever fails to */
+main.journey:not(.is-active) {
+  animation: journey-failsafe 0.8s ease 2.5s forwards;
+}
+
+@keyframes journey-failsafe {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 main.journey.is-active {
